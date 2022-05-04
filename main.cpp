@@ -1,493 +1,395 @@
 #include <iostream>
-#include <typeinfo>
+#include <fstream>
+#include <string.h>
+#include <vector>
 
 using namespace std;
+ifstream in("fisier.in");
 
-class Card
+class Produs
 {
-    string nrCard, NumeDetinator, data_expirare;
-    int CVV;
-    double credit;
+    char *nume;
+    float pret;
+    int nr_bucati;
 public:
-    ///functie virtuala pura
-    virtual void const f()=0;
     ///constructori initializare
-    Card(){nrCard=NumeDetinator=data_expirare=""; CVV=credit=0;}
-    Card(string, string, string, int, double);
+    Produs(char*, float, int);
+    Produs();
+    Produs(bool);
+    ///destructor
+    ~Produs(){delete[] nume;}
     ///constructor copiere
-    Card(const Card&);
-    ///operator =
-    Card& operator=(const Card&);
-    ///destructor
-    virtual ~Card(){}
-    ///functie citire
-    virtual void citire(istream& in){in>>nrCard>>NumeDetinator>>data_expirare>>CVV>>credit;}
+    Produs(const Produs&);
+    ///get si set
+    float get_pret(){return pret;}
+    int get_nr_bucati(){return nr_bucati;}
+    void set_nr_bucati(int x){nr_bucati=x;}
+    char* get_nume(){return nume;}
+    ///operator de copiere
+    Produs& operator=(Produs&);
     ///functie afisare
-    virtual void afis(){cout<<nrCard<<" "<<NumeDetinator<<" "<<data_expirare<<" "<<CVV<<" "<<credit<<endl;}
-    ///operator >> (cu functie membra de citire virtuala)
-    friend istream& operator>>(istream&, Card&);
-    ///operator << (fara functie membra de afisare virtuala)
-    friend ostream& operator<<(ostream&, Card&);
-    ///set si get
-    string get_nr(){return nrCard;}
-    double get_credit(){return credit;}
-    void set_credit(double s){credit=s;}
-    void set_credit1(double suma){credit+=suma;}
-    ///functie extragere bani
-    virtual void extrage(double);
-
-    virtual double transfer(double suma){extrage(suma); return suma;}
+    void afis(){cout<<nume<<" "<<pret<<" "<<nr_bucati<<endl;}
+    ///operator de afisare
+    friend ostream &operator<<(ostream&, const Produs&);
+    ///operator de citire
+    friend istream &operator>>(istream &, Produs &);
+    ///operator +
+    Produs& operator+(float x);
+    ///operatorul -- in forma prefixata
+    Produs& operator--();
+    ///operatorul -- in forma postfixata
+    Produs& operator--(int);
+    ///operator cast
+    operator double();
+    ///operator unar -
+    Produs& operator-();
+    ///operator - pt 2 obiecte
+    Produs& operator-(Produs);
+    ///operator +=
+    Produs& operator+=(Produs);
+    ///operator !
+    bool operator!();
 };
-
-Card::Card(string nr, string nd, string de, int c, double cr)
+Produs::Produs():nr_bucati(0), pret(0){nume=new char(50);}
+Produs::Produs(char* prod, float p, int nr){nume=new char(50); strcpy(nume, prod); pret=p; nr_bucati=nr;}
+Produs::Produs(const Produs& p){nume=new char(50); strcpy(this->nume, p.nume); this->pret=p.pret; this->nr_bucati=p.nr_bucati;}
+Produs::Produs (bool b)
 {
-    nrCard=nr;
-    NumeDetinator=nd;
-    data_expirare=de;
-    CVV=c;
-    credit=cr;
-}
-
-Card::Card(const Card& c)
-{
-    nrCard=c.nrCard;
-    NumeDetinator=c.NumeDetinator;
-    data_expirare=c.data_expirare;
-    CVV=c.CVV;
-    credit=c.credit;
-}
-
-Card& Card::operator=(const Card& c)
-{
-    if(this!=&c)
+    nume=new char(50);
+    if(b==true)
     {
-        nrCard=c.nrCard;
-        NumeDetinator=c.NumeDetinator;
-        data_expirare=c.data_expirare;
-        CVV=c.CVV;
-        credit=c.credit;
-    }
-    return *this;
-}
-
-
-ostream& operator<<(ostream& out, Card& c)
-{
-    out<<c.nrCard<<" "<<c.NumeDetinator<<" "<<c.data_expirare<<" "<<c.CVV<<" "<<c.credit<<endl;
-    return out;
-}
-
-void Card::extrage(double suma)
-{
-    if(suma>credit)
-    {
-        cout<<"Fonduri insuficiente\n";
-        throw(0);
-    }
-}
-
-
-class Card_standard: public Card
-{
-    int limitaExtragere;
-    static double comisionDepasireLimita;
-public:
-    void const f(){cout<<"Card standard\n";}
-    ///constructori initializare
-    Card_standard(): Card() {}
-    Card_standard(string, string, string, int, double, int);
-    ///constructor de copiere
-    Card_standard(const Card_standard&);
-    ///operator =
-    Card_standard& operator=(const Card_standard&);
-    ///destructor
-    ~Card_standard(){}
-    ///functie citire
-    void citire(istream& in){Card::citire(in); in>>limitaExtragere;}
-    ///functie afisare
-    void afis(){cout<<"Tip card: standard\n"; Card::afis(); cout<<limitaExtragere<<" "<<comisionDepasireLimita<<endl;}
-    ///operator <<
-    friend ostream& operator<<(ostream&, Card_standard&);
-    ///functie extragere bani
-    void extrage(double suma);
-    ///functie statica
-    static void schimba_comision(double x){comisionDepasireLimita=x; cout<<"Comision modificat la "<<" "<<x<<endl;}
-
-    double transfer(double suma){Card_standard::extrage(suma); return suma;}
-};
-
-Card_standard::Card_standard(string nr, string nd, string de, int c, double cr, int le):Card(nr, nd, de, c, cr)
-{
-    limitaExtragere=le;
-}
-
-Card_standard::Card_standard(const Card_standard& cs):Card(cs), limitaExtragere(3000)
-{
-    limitaExtragere=cs.limitaExtragere;
-    comisionDepasireLimita=cs.comisionDepasireLimita;
-}
-
-Card_standard& Card_standard::operator=(const Card_standard& cs)
-{
-    if(this!=&cs)
-    {
-        this->Card::operator=(cs);
-        limitaExtragere=cs.comisionDepasireLimita;
-        comisionDepasireLimita=cs.comisionDepasireLimita;
-    }
-    return *this;
-}
-
-ostream& operator<<(ostream& out, Card_standard& cs)
-{
-    Card *c=&cs;
-    out<<*c<<" ";
-    out<<cs.limitaExtragere<<"\n"<<"Comision: "<<cs.comisionDepasireLimita<<endl;
-}
-
-void Card_standard::extrage(double suma)
-{
-    try
-    {
-        Card::extrage(suma);
-    }
-    catch(int x)
-    {
-        return;
-    }
-
-    if(suma>limitaExtragere)
-    {
-        double x=get_credit()-suma-(limitaExtragere-suma)*comisionDepasireLimita;
-        set_credit(x);
+        cin.getline(nume, 50);
+        cin>>nr_bucati>>pret;
     }
     else
     {
-        double x=get_credit()-suma;
-        set_credit(x);
+        in.getline(nume, 50);
+        in>>nr_bucati>>pret;
     }
-    if(typeid(*this)==typeid(Card_standard))
-        cout<<"Suma "<<suma<<" extrasa. Credit curent: "<<this->get_credit()<<endl;;
-
 }
-
-class Card_premium: public Card_standard
+Produs& Produs::operator=(Produs& ob)
 {
-    double cashback;
-public:
-    void const f(){cout<<"Card premium\n";}
-    ///constructori initializare
-    Card_premium() {}
-    Card_premium(string, string, string, int, double, int, double);
-    ///constructor de copiere
-    Card_premium(const Card_premium&);
-    ///operator =
-    Card_premium& operator=(const Card_premium&);
-    ///destructor
-    ~Card_premium(){}
-    ///functie citire
-    void citire(istream& in){Card_standard::citire(in); in>>cashback;}
-    ///functie afis()
-    void afis(){cout<<"Tip card: premium\n"; Card::afis(); cout<<cashback;}
-    ///operator <<
-    friend ostream& operator<<(ostream&, Card_premium&);
-    ///functie extragere
-    void extrage(double);
-
-    double transfer(double suma){Card_premium::extrage(suma); return suma;}
-
-};
-Card_premium::Card_premium(string nr, string nd, string de, int c, double cr, int le, double cb):
-    Card_standard(nr, nd, de, c, cr, le), cashback(cb) {}
-
-Card_premium::Card_premium(const Card_premium& cp):Card_standard(cp)
-{
-    cashback=cp.cashback;
-}
-
-Card_premium& Card_premium::operator=(const Card_premium& cp)
-{
-    if(this!=&cp)
+    if(this!=&ob)
     {
-        this->Card_standard::operator=(cp);
-        cashback=cp.cashback;
-
+        this->nume=new char[strlen(ob.nume)+1];
+        strcpy(this->nume, ob.nume);
+        this->pret=ob.pret;
+        this->nr_bucati=ob.nr_bucati;
     }
     return *this;
 }
 
-ostream& operator<<(ostream& out, Card_premium& cp)
+ostream &operator<<(ostream& out, const Produs &p)
 {
-    Card_standard *cs=&cp;
-    out<<*cs;
-    out<<cp.cashback<<endl;
+    cout<<p.nume<<endl;
+    cout<<p.nr_bucati<<" "<<p.pret<<endl;
+    return out;
 }
-
-void Card_premium::extrage(double suma)
+istream &operator>>(istream &in, Produs &p)
 {
-    try
-    {
-        Card::extrage(suma);
-    }
-    catch(int x)
-    {
-        return;
-    }
-
-    double x=get_credit()-suma+cashback/100*suma;
-    set_credit(x);
-    cout<<"Suma extrasa. Credit curent: "<<this->get_credit()<<endl;
-}
-
-///operatorul de citire
-istream& operator>>(istream& in, Card& c)
-{
-    c.citire(in);
+    cin.getline(p.nume, 50);
+    cin>>p.nr_bucati>>p.pret;
     return in;
 }
 
-///variabila statica
-double Card_standard::comisionDepasireLimita=0.1;
+Produs& Produs::operator+(float x)
+{
+    this->pret+=x;
+    return *this;
+}
+
+Produs& Produs::operator-(Produs p)
+{
+    this->pret-=p.pret;
+    this->nr_bucati-=p.nr_bucati;
+    return *this;
+}
+Produs& Produs::operator--()
+{
+    pret--;
+    return *this;
+}
+
+Produs& Produs::operator--(int x)
+{
+    pret--;
+    return *this;
+}
+
+Produs::operator double()
+{
+    return (double)pret;
+}
+
+Produs& Produs::operator-()
+{
+    pret=-pret;
+    nr_bucati=-nr_bucati;
+    return *this;
+}
+
+Produs& Produs::operator+=(Produs p)
+{
+    this->pret+=p.pret;
+    this->nr_bucati+=p.nr_bucati;
+    return *this;
+}
+
+bool Produs::operator!()
+{
+    if(pret==0 || nr_bucati==0)
+        return 0;
+    return 1;
+}
+
+class Comanda
+{
+    int id, nr_prod;
+    char *magazin, *status;
+    float suma_plata;
+    Produs p[20];
+public:
+    ///constructori initializare
+    Comanda();
+    Comanda(int, char*);
+    ///destructor
+    ~Comanda(){delete[] magazin; delete[] status;}
+    ///get si set
+    char* get_status() {return status;}
+    void set_status(char* s) {strcpy(status, s);}
+    void set_suma_plata() {suma_plata=0;}
+    int get_nr_prod() {return nr_prod;}
+    Produs get_prod(int i) {return p[i];}
+    ///operator afisare
+    friend ostream &operator<<(ostream&, const Comanda&);
+    ///operator de indexare
+    Produs operator[](int i){return p[i];}
+
+    ///alte functii
+    //void adauga_produs(Produs);
+    friend void adauga_produs(Produs, Comanda&); //transformare functie membra in functie prieten
+    void sterge_produs(int);
+    void afis_suma_plata(){strcpy(status, "Comanda procesata"); cout<<status<<". De plata: "<<suma_plata<<"lei\n";}
+    void afis_produse();
+
+};
+
+Comanda::Comanda():suma_plata(0), nr_prod(0)
+{
+    magazin=new char[50];
+    status=new char[50];
+    strcpy(status,"");
+    id=rand()%1000;
+}
+
+Comanda::Comanda(int nr, char* m):suma_plata(0), nr_prod(0)
+{
+    magazin=new char[50];
+    status=new char[50];
+    id=nr;
+    strcpy(magazin, m);
+    strcpy(status, "Adauga produse");
+}
+/*
+void Comanda::adauga_produs(Produs prod)
+{
+    nr_prod++;
+    p[nr_prod]=prod;
+    suma_plata+=prod.get_pret()*prod.get_nr_bucati();
+}
+*/
+
+void adauga_produs(Produs prod, Comanda& c)
+{
+    c.nr_prod++;
+    c.p[c.nr_prod]=prod;
+    c.suma_plata+=prod.get_pret()*prod.get_nr_bucati();
+}
+
+void Comanda::sterge_produs(int i)
+{
+    if (i==0 || i>nr_prod)
+        cout<<"Produsul selectat nu exista in cos\n";
+        else
+        {
+            Produs prod=p[i];
+            suma_plata-=prod.get_pret()*prod.get_nr_bucati();
+
+            cout<<"Produsul "<<prod.get_nume()<<" a fost sters din comanda\n";
+            for(int j=i; j<nr_prod; j++)
+                p[j]=p[j+1];
+            nr_prod--;
+        }
+}
+
+
+ostream &operator<<(ostream& out, const Comanda& c)
+{
+    cout<<"Comanda:"<<endl<<c.id<<" "<<c.magazin<<" "<<c.status<<" "<<c.suma_plata<<endl;
+    return out;
+}
+
+void Comanda::afis_produse()
+{
+    cout<<"Produsele din comanda:\n";
+    for(int i=1; i<=nr_prod; i++)
+        cout<<i<<" "<<p[i]<<" ";
+    cout<<'\n';
+}
+
+class Client
+{
+    char* nume_prenume, *adresa, *tel;
+public:
+    ///constructori initializare
+    Client();
+    Client(char*, char*, char*);
+    ///destructor
+    ~Client(){delete[] nume_prenume; delete[] adresa; delete[] tel;}
+    ///operator afisare
+    friend ostream &operator<<(ostream&, const Client&);
+    ///operator citire
+    friend istream &operator>>(istream &, Client &);
+    ///alte functii
+    void deschide_comanda(Comanda&);
+    void finalizeaza_comanda(Comanda&);
+    void editeaza_cont(char*, char*);
+
+};
+
+Client::Client(){nume_prenume=new char[50]; adresa=new char[50]; tel=new char[50];}
+Client::Client(char* np, char* adr, char* t)
+{
+    nume_prenume=new char[50];
+    adresa=new char[50];
+    tel=new char[50];
+    strcpy(nume_prenume, np); strcpy(adresa, adr); strcpy(tel, t);
+}
+
+void Client::deschide_comanda(Comanda& c){c.set_status("Comanda deschisa"); c.set_suma_plata(); cout<<c.get_status()<<endl;}
+void Client::finalizeaza_comanda(Comanda& c)
+{
+    cout<<"Detalii livrare:\n"<<"Client\n"<<nume_prenume<<", "<<adresa<<", "<<tel<<endl;
+    c.afis_suma_plata();
+
+}
+void Client::editeaza_cont(char *adresa, char *tel){strcpy(this->tel, tel); strcpy(this->adresa, adresa);}
+ostream &operator<<(ostream& out, const Client& cl)
+{
+    cout<<"Client:"<<endl<<cl.nume_prenume<<" "<<cl.adresa<<" "<<cl.tel<<" "<<endl;
+    return out;
+}
+
+istream &operator>>(istream &in, Client &cl)
+{
+    cin.getline(cl.nume_prenume, 50);
+    cin.getline(cl.adresa, 50);
+    cin.getline(cl.tel, 50);
+    return in;
+}
 
 int main()
 {
-    unsigned short int cerinta;
-    cout<<"1.Deschidere card\n2.Folosire mai multe carduri\n3.Transformare tip card\n";
-    cin>>cerinta;
-    if(cerinta==1)
-    {
-        cout<<"Deschidere card:\nAlegeti tipul de card:\n";
-        cout<<"1.Card standard\n2.Card premium\n";
-        unsigned short int x;
-        cin>>x;
-        if(x==1)
-        {
-            cout<<"Introduceti date card standard: numar, nume detinator, data expirare, CVV, credit, limita extragere\n";
-            string nr, nume, data;
-            int cv, l;
-            double cr;
-            cin>>nr>>nume>>data>>cv>>cr>>l;
-            Card_standard cs(nr, nume, data, cv, cr, l);
-            cout<<cs;
-            cout<<"1.Interogare sold\n2.Extragere numerar\n3.Modificare comision\n4.Oprire\n";
-            short int y;
-            cin>>y;
-            switch(y)
-            {
-            case 1:
-                cout<<"Credit: "<<cs.get_credit()<<endl;
-                break;
-            case 2:
-                int suma;
-                cout<<"Introduceti suma de extras: \n";
-                cin>>suma;
-                cs.extrage(suma);
-                break;
-            case 3:
-                cout<<"Valoarea noului comision:\n";
-                double d;
-                cin>>d;
-                cs.schimba_comision(d);
-                break;
-            case 4:
-                break;
-            }
-        }
+///.....
 
-        if(x==2)
-        {
-            cout<<"Introduceti date card premium: numar, nume, data expirare, CVV, credit, limita extragere si cashback\n";
-            Card_premium cp;
-            cin>>cp;
-            cout<<cp;
-            cout<<"1.Interogare sold\n2.Extragere numerar\n3.Opririe\n";
-            unsigned short int y;
-            cin>>y;
-            switch(y)
-            {
-            case 1:
-                cout<<"Credit: "<<cp.get_credit()<<endl;
-                break;
-            case 2:
-                int suma;
-                cout<<"Introduceti suma de extras:\n";
-                cin>>suma;
-                cp.extrage(suma);
-                break;
-            case 3:
-                cout<<"Valoarea noului comision:\n";
-                double d;
-                cin>>d;
-                cp.schimba_comision(d);
-                break;
-            case 4:
-                break;
-            }
-        }
+    Client cnt;
+    cout<<"Introdu datele de client (Nume, Adresa, Telefon, fiecare pe cate un rand):\n";
+    cin>>cnt; //supraincarcare operator citire
+    Comanda c; //constructor initializare fara param.
+
+    cout<<"1.Schimba date cont client\n2.Incepe cumparaturile\n";
+    int x;
+    cin>>x;
+    cin.get();
+    if(x==1)
+    {
+        char tel[50], adr[50];
+        cout<<"Noua adresa:\n";
+        cin.getline(adr, 50);
+        cout<<"Noul telefon:\n";
+        cin.getline(tel, 50);
+        cnt.editeaza_cont(adr, tel);
     }
 
-    if(cerinta==2)
+    cout<<cnt<<"\nSe deschide comanda:"; //supraincarcare operator afisare
+    cnt.deschide_comanda(c);
+    int nr;
+    cout<<"Introdu numarul de produse";
+    cin>>nr;
+    cin.get();
+    for(int i=1; i<=nr; i++)
     {
-        bool ok=0;
-        int n;
-        do
-        {
-            ok=1;
-            cout<<"Introduceti numarul de carduri (max 100):\n";
-            cin>>n;
-        try
-        {
-            if(n>100)
-            {
-                throw(0);
-            }
-        }
-
-            catch(int x)
-            {
-                if(x==0)
-                {
-                    cout<<"Numarul de carduri este prea mare\nIntroduceti un nou numar\n";
-                    ok=0;
-                }
-
-            }
-        }while(ok==0);
-
-
-        Card *v[101];
-        for(int i=0; i<n; i++)
-        {
-            cout<<"Tip card (standard sau premium): \n";
-            string s;
-            cin>>s;
-            if(s=="Standard" || s=="standard")
-            {
-                Card_standard cs1;
-                cout<<"Introduceti date card standard: numar, nume detinator, data expirare, CVV, credit, limita extragere\n";
-                cin>>cs1;
-                v[i]=new Card_standard(cs1); //upcasting
-            }
-
-            else if(s=="premium" || s=="Premium")
-            {
-                Card_premium cp1;
-                cout<<"Introduceti date card premium: numar, nume, data expirare, CVV, credit, limita extragere, cashback\n";
-                cin>>cp1;
-                v[i]=new Card_premium(cp1); //upcasting
-            }
-
-            else
-            {
-                cout<<"Tip de card invalid\n";
-                return 0;
-            }
-
-           try
-            {
-                for(int j=0; j<i; j++)
-                {
-                    if(v[j]->get_nr()==v[i]->get_nr())
-                    {
-                        if((typeid(*v[i])==typeid(Card_standard)))
-                            throw(1);
-                        else
-                            throw(2);
-                    }
-
-                }
-            }
-            catch(int x)
-            {
-                if(x==1)
-                    cout<<"\nNu se poate deschide un card standard cu acelasi numar cu un alt card\n";
-                else
-                    cout<<"\nNu se poate deschide un card premium cu acelasi numar cu un alt card\n";
-                return 0;
-
-            }
-
-        }
-
-        for(int i=0; i<n; i++)
-            v[i]->afis();
-
-        cout<<"Alege un card. Indicele cardului:\n";
-        int k;
-        try
-        {
-            cin>>k;
-            if(k>n-1)
-                throw(k);
-        }
-        catch(int x)
-        {
-           cout<<k<<" nu este un indice valid\n";
-            return 0;
-        }
-        cout<<"1.Extrage numerar\n2.Transfer bancar\n3.Interogare sold\n";
-        unsigned short int x;
-        cin>>x;
-        switch(x)
-        {
-        case 1:
-            {
-                cout<<*v[k]<<endl<<"Introduceti suma\n";
-                double suma;
-                cin>>suma;
-                v[k]->extrage(suma);
-                break;
-            }
-        case 2:
-            cout<<"Introduceti suma de transferat si destinatarul(indice card):\n";
-            double suma;
-            unsigned short int z;
-            try
-            {
-                cin>>suma>>z;
-                if(z>n)
-                    throw(n);
-            }
-            catch(int x)
-            {
-                cout<<x<<" nu este un indice valid\n";
-                return 0;
-            }
-            if(suma>v[k]->get_credit())
-                    suma=0;
-            v[z]->set_credit1(v[k]->transfer(suma));
-            cout<<"Destinatarul:\n";
-            cout<<*v[z]<<endl;
-            break;
-
-        case 3:
-            cout<<"Destinatar:\n"<<v[k]->get_credit()<<endl;
-            break;
-        }
-     }
-    if(cerinta==3)
-    {
-        cout<<"1.Transformare card strandard in card premium (downcasting)\n2.Transformare card premium in card standard (upcasting)\n";
-        unsigned short int z;
-        cin>>z;
-        if(z==1)
-        {
-
-            Card_standard *pcs=new Card_premium("124", "Ionescu", "09/2023", 456, 2000.50, 3000, 10);
-            //downcasting
-            Card_premium *pcp=dynamic_cast<Card_premium*>(pcs);
-            cout<<"Noul card:\n";
-            pcp->f();
-            cout<<*pcp<<endl;
-        }
-        else
-        {
-            Card_standard *pcs=new Card_premium("124", "Ionescu", "09/2023", 456, 2000.50, 3000, 10);
-            pcs->f();
-            cout<<*pcs;
-        }
-
+        cout<<"Adauga produsul "<<i<<" (Nume, Numar bucati, Pretul, fiecare pe cate o linie):\n";
+        char n[50];
+        int bucati;
+        float pret;
+        cin.getline(n, 50);
+        cin>>bucati>>pret;
+        cin.get();
+        Produs p(n, bucati, pret); //constr. init. cu param.
+        //c.adauga_produs(p);
+        adauga_produs(p, c);
     }
 
+    c.afis_produse();
+    cout<<"Alege urmatoarul pas:\n"<<"1.Elimina un produs.\n"<<"2.Adauga de 2 ori un produs din comanda.\n";
+    cout<<"3.Finalizeaza comanda\n";
+    cin>>x;
+    switch(x)
+    {
+    case 1:
+        cout<<"Alege nr produsului de eliminat:\n";
+        int nr;
+        cin>>nr;
+        c.sterge_produs(nr);
+        //c.afis_produse();
+        for(int i=1; i<=c.get_nr_prod(); i++)
+            cout<<c[1]<<" "; //operator de indexare
+        break;
+    case 2:
+        cout<<"Alege nr produsului de adaugat:\n";
+        cin>>nr;
+        Produs p2=c.get_prod(nr);//operator de atribuire
+        Produs p3(p2); //constructor de copiere
+        cout<<p2<<'\n'<<p3<<'\n';
+        //c.adauga_produs(p3);
+        adauga_produs(p3, c);
+        break;
+    }
+    cout<<"Finalizare comanda\n";
+    cnt.finalizeaza_comanda(c);
+
+///.....
+
+    cout<<"Alte operatii:\n";
+    cout<<"Se creeaza un produs\n";
+    Produs p4("paine", 3, 3);
+    cout<<p4;
+    double d=(double)p4;
+    cout<<"Conversie float (produs.pret) to double "<<d<<'\n';
+    cout<<"Operator de decrementare unar(forma prefixata si postfixata)\n"<<--p4<<" "<<p4--<<'\n';
+    cout<<"Operator +\n"<<p4+2;
+
+    cout<<"Operatii suplimentare:\n";
+    Produs p5;
+    cin>>p5;
+    int y=p5;
+    cout<<y<<endl;
+    cout<<p5<<" "<<-p5;
+    -p5;
+    Produs p6(false); //constructor cu parametru bool
+    cout<<p6<<'\n';
+    Comanda c2;
+    adauga_produs(p6, c2); //apelare functie transformata din functie membra in functie prieten
+    Produs v[3];
+    v[0]=p5;
+    v[1]=v[2]=p5-p6;
+    if(v[0]!=v[2])
+        v[0]+=v[2];
+    else if(!v[1])
+        cout<<v[1]<<" nu e zero\n";
+    for(int i=0; i<3; i++)
+        cout<<v[i]<<" ";
+    cout<<'\n';
     return 0;
 }
